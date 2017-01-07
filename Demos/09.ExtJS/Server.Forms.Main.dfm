@@ -1,7 +1,7 @@
 object MainForm: TMainForm
   Left = 0
   Top = 0
-  Caption = 'MARS ExtJS Demo'
+  Caption = 'WiRL ExtJS Demo'
   ClientHeight = 201
   ClientWidth = 464
   Color = clBtnFace
@@ -58,16 +58,17 @@ object MainForm: TMainForm
     end
   end
   object Button1: TButton
-    Left = 16
-    Top = 96
+    Left = 151
+    Top = 136
     Width = 163
-    Height = 25
+    Height = 41
     Action = TestAction
+    Default = True
     TabOrder = 1
   end
   object MainActionList: TActionList
-    Left = 384
-    Top = 24
+    Left = 296
+    Top = 16
     object StartServerAction: TAction
       Caption = 'Start Server'
       OnExecute = StartServerActionExecute
@@ -79,7 +80,7 @@ object MainForm: TMainForm
       OnUpdate = StopServerActionUpdate
     end
     object TestAction: TAction
-      Caption = 'Test'
+      Caption = 'Launch Ext JS App'
       OnExecute = TestActionExecute
     end
   end

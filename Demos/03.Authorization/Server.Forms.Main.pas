@@ -1,9 +1,12 @@
-(*
-  Copyright 2015-2016, MARS - REST Library
-
-  Home: https://github.com/MARS-library
-
-*)
+{******************************************************************************}
+{                                                                              }
+{       WiRL: RESTful Library for Delphi                                       }
+{                                                                              }
+{       Copyright (c) 2015-2017 WiRL Team                                      }
+{                                                                              }
+{       https://github.com/delphi-blocks/WiRL                                  }
+{                                                                              }
+{******************************************************************************}
 unit Server.Forms.Main;
 
 interface
@@ -11,7 +14,7 @@ interface
 uses
   System.SysUtils, System.Classes, Vcl.Controls, Vcl.Forms, Vcl.ActnList,
   Vcl.StdCtrls, Vcl.ExtCtrls, System.Diagnostics, System.Actions,
-  MARS.http.Server.Indy;
+  WiRL.http.Server.Indy;
 
 type
   TMainForm = class(TForm)
@@ -23,6 +26,8 @@ type
     StopServerAction: TAction;
     PortNumberEdit: TEdit;
     Label1: TLabel;
+    edtSecret: TEdit;
+    Label2: TLabel;
     procedure StartServerActionExecute(Sender: TObject);
     procedure StartServerActionUpdate(Sender: TObject);
     procedure StopServerActionExecute(Sender: TObject);
@@ -30,7 +35,7 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
   private
-    FServer: TMARShttpServerIndy;
+    FServer: TWiRLhttpServerIndy;
   public
   end;
 
@@ -57,22 +62,23 @@ end;
 procedure TMainForm.StartServerActionExecute(Sender: TObject);
 begin
   // Create http server
-  FServer := TMARShttpServerIndy.Create;
+  FServer := TWiRLhttpServerIndy.Create;
 
   // Engine configuration
   FServer.ConfigureEngine('/rest')
-    .SetName('MARS Auth Demo')
+    .SetName('WiRL Auth Demo')
     .SetPort(StrToIntDef(PortNumberEdit.Text, 8080))
     .SetThreadPoolSize(75)
 
     .AddApplication('/app')
       .SetSystemApp(True)
       .SetName('Auth Application')
+      .SetSecret(Tencoding.UTF8.GetBytes(edtSecret.Text))
       .SetClaimsClass(TServerClaims)
       .SetResources([
        'Server.Resources.TFormAuthResource',
        'Server.Resources.TBasicAuthResource',
-       'Server.Resources.TSecuredResource'
+       'Server.Resources.TUserResource'
       ]);
 
   if not FServer.Active then

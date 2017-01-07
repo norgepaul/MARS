@@ -1,3 +1,12 @@
+{******************************************************************************}
+{                                                                              }
+{       WiRL: RESTful Library for Delphi                                       }
+{                                                                              }
+{       Copyright (c) 2015-2017 WiRL Team                                      }
+{                                                                              }
+{       https://github.com/delphi-blocks/WiRL                                  }
+{                                                                              }
+{******************************************************************************}
 unit Server.Resources.Data;
 
 interface
@@ -9,22 +18,18 @@ uses
   FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, FireDAC.Phys.SQLite,
   FireDAC.Phys.SQLiteDef, FireDAC.Stan.ExprFuncs, FireDAC.Stan.Param,
   FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt, FireDAC.VCLUI.Wait,
-  FireDAC.Comp.UI, FireDAC.Comp.DataSet, FireDAC.Comp.Client
+  FireDAC.Comp.UI, FireDAC.Comp.DataSet, FireDAC.Comp.Client,
 
-  , MARS.Core.JSON
-  , MARS.Core.Request
-  , MARS.Core.Response
-
-  , MARS.Core.Registry
-  , MARS.Core.Attributes
-  , MARS.Core.MediaType
-  , MARS.Core.URL
-  , MARS.Core.MessageBodyWriters
-  , MARS.Core.Token
-  , MARS.Core.Token.Resource
-  , MARS.Core.Exceptions
-  , MARS.Data.Resolver
-  ;
+  WiRL.Core.JSON,
+  WiRL.Core.Registry,
+  WiRL.Core.Attributes,
+  WiRL.http.Accept.MediaType,
+  WiRL.Core.URL,
+  WiRL.Core.MessageBodyReaders,
+  WiRL.Core.MessageBodyWriters,
+  WiRL.Data.MessageBodyWriters,
+  WiRL.Core.Exceptions,
+  WiRL.Data.Resolver;
 
 
 type
@@ -46,16 +51,16 @@ type
     qryEmpNoGen: TFDQuery;
     procedure DataModuleCreate(Sender: TObject);
   public
-    [GET, Path('/employee/'){, RolesAllowed('standard')}]
+    [GET, Path('/employee/')]
     function Employee(): TDataSet;
 
-    [POST, Path('/employee/'), Produces(TMediaType.APPLICATION_JSON)]
+    [POST, Path('/employee/')]
     function InsertEmployee([BodyParam] Json: TJSONValue): TJSONObject;
 
-    [PUT, Path('/employee/{Id}'), Produces(TMediaType.APPLICATION_JSON)]
+    [PUT, Path('/employee/{Id}')]
     function UpdateEmployee(Id :Integer; [BodyParam] Json: TJSONValue): TJSONObject;
 
-    [DELETE, Path('/employee/{Id}'), Produces(TMediaType.APPLICATION_JSON)]
+    [DELETE, Path('/employee/{Id}')]
     function DeleteEmployee([PathParam] Id :Integer; [BodyParam] Json: TJSONValue): TJSONObject;
   end;
 
@@ -77,7 +82,7 @@ end;
 
 function TMainModule.InsertEmployee(Json: TJSONValue): TJSONObject;
 begin
-  raise EMARSNotSupportedException.Create('Not yet implemented');
+  raise EWiRLNotImplementedException.Create('Not yet implemented');
 end;
 
 procedure TMainModule.DataModuleCreate(Sender: TObject);
@@ -93,18 +98,18 @@ end;
 
 function TMainModule.DeleteEmployee(Id: Integer; Json: TJSONValue): TJSONObject;
 begin
-  TMARSResolver.DeleteDataSet(qryEmployee, Id);
+  TWiRLResolver.DeleteDataSet(qryEmployee, Id);
   Result := TJSONObject.Create(TJSONPair.Create('success', TJSONBool.Create(True)));
 end;
 
 function TMainModule.UpdateEmployee(Id :Integer; Json: TJSONValue): TJSONObject;
 begin
-  TMARSResolver.UpdateDataSet(qryEmployee, Json);
+  TWiRLResolver.UpdateDataSet(qryEmployee, Json);
   Result := TJSONObject.Create(TJSONPair.Create('success', TJSONBool.Create(True)));
 end;
 
 initialization
-  TMARSResourceRegistry.Instance.RegisterResource<TMainModule>(
+  TWiRLResourceRegistry.Instance.RegisterResource<TMainModule>(
     function: TObject
     begin
       Result := TMainModule.Create(nil);

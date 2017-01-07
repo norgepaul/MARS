@@ -1,9 +1,12 @@
-(*
-  Copyright 2015-2016, MARS - REST Library
-
-  Home: https://github.com/MARS-library
-
-*)
+{******************************************************************************}
+{                                                                              }
+{       WiRL: RESTful Library for Delphi                                       }
+{                                                                              }
+{       Copyright (c) 2015-2017 WiRL Team                                      }
+{                                                                              }
+{       https://github.com/delphi-blocks/WiRL                                  }
+{                                                                              }
+{******************************************************************************}
 unit Server.Forms.Main;
 
 interface
@@ -11,9 +14,10 @@ interface
 uses
   System.Classes, System.SysUtils, Vcl.Forms, Vcl.ActnList, Vcl.ComCtrls,
   Vcl.StdCtrls, Vcl.Controls, Vcl.ExtCtrls, System.Diagnostics, System.Actions,
-  MARS.Core.Engine,
-  MARS.http.Server.Indy,
-  MARS.Core.Application;
+
+  WiRL.Core.Engine,
+  WiRL.Core.Application,
+  WiRL.http.Server.Indy;
 
 type
   TMainForm = class(TForm)
@@ -32,7 +36,7 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
   private
-    FServer: TMARShttpServerIndy;
+    FServer: TWiRLhttpServerIndy;
   public
   end;
 
@@ -44,11 +48,11 @@ implementation
 {$R *.dfm}
 
 uses
-  MARS.Core.JSON,
-  MARS.Rtti.Utils,
-  MARS.Core.MessageBodyWriter,
-  MARS.Core.MessageBodyWriters,
-  MARS.Data.MessageBodyWriters;
+  WiRL.Core.JSON,
+  WiRL.Rtti.Utils,
+  WiRL.Core.MessageBodyWriter,
+  WiRL.Core.MessageBodyWriters,
+  WiRL.Data.MessageBodyWriters;
 
 
 procedure TMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -64,19 +68,19 @@ end;
 procedure TMainForm.StartServerActionExecute(Sender: TObject);
 begin
   // Create http server
-  FServer := TMARShttpServerIndy.Create;
+  FServer := TWiRLhttpServerIndy.Create;
 
   // Engine configuration
   FServer.ConfigureEngine('/rest')
     .SetPort(StrToIntDef(PortNumberEdit.Text, 8080))
-    .SetName('MARS Template')
+    .SetName('WiRL ContentType Demo')
     .SetThreadPoolSize(5)
 
     // Application configuration
-    .AddApplication('/default')
-      .SetName('Default App')
+    .AddApplication('/app')
+      .SetName('Content App')
       .SetResources([
-        'Server.Resources.THelloWorldResource'
+        'Server.Resources.TSampleResource'
       ])
   ;
 

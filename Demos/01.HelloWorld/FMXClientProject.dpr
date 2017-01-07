@@ -1,9 +1,12 @@
-(*
-  Copyright 2015, MARS - REST Library
-
-  Home: https://github.com/MARS-library
-
-*)
+{******************************************************************************}
+{                                                                              }
+{       WiRL: RESTful Library for Delphi                                       }
+{                                                                              }
+{       Copyright (c) 2015-2017 WiRL Team                                      }
+{                                                                              }
+{       https://github.com/delphi-blocks/WiRL                                  }
+{                                                                              }
+{******************************************************************************}
 program FMXClientProject;
 
 uses

@@ -1,41 +1,47 @@
-(*
-  Copyright 2015-2016, MARS - REST Library
-
-  Home: https://github.com/MARS-library
-
-*)
+{******************************************************************************}
+{                                                                              }
+{       WiRL: RESTful Library for Delphi                                       }
+{                                                                              }
+{       Copyright (c) 2015-2017 WiRL Team                                      }
+{                                                                              }
+{       https://github.com/delphi-blocks/WiRL                                  }
+{                                                                              }
+{******************************************************************************}
 unit Server.Resources;
 
 interface
 
 uses
-  System.Classes, System.SysUtils, System.Rtti, Generics.Collections,
-  MARS.Core.Engine,
-  MARS.Core.JSON,
-  MARS.Core.Registry,
-  MARS.Core.Attributes,
-  MARS.Core.MediaType,
-  MARS.Core.URL,
-  MARS.Core.MessageBodyWriters,
-  MARS.Core.Token,
-  MARS.Core.Request,
-  MARS.Core.Response, 
-  System.JSON;
+  System.Classes, System.SysUtils, System.JSON,
+  WiRL.Core.Engine,
+  WiRL.Core.Application,
+  WiRL.Core.Registry,
+  WiRL.Core.Attributes,
+  WiRL.http.Accept.MediaType,
+  WiRL.Core.URL,
+  WiRL.Core.MessageBodyWriters,
+  WiRL.Core.MessageBodyReaders,
+  WiRL.Core.Auth.Context,
+  WiRL.Core.Request,
+  WiRL.Core.Response;
 
 type
   [Path('/helloworld')]
   THelloWorldResource = class
   private
-  protected
-    [Context] Request: TMARSRequest;
-    [Context] Response: TMARSResponse;
-    [Context] AuthContext: TMARSAuthContext;
+    [Context] Request: TWiRLRequest;
+    [Context] AuthContext: TWiRLAuthContext;
   public
     [GET]
-    [Produces(TMediaType.TEXT_PLAIN)]
+    [Produces(TMediaType.TEXT_PLAIN + TMediaType.WITH_CHARSET_UTF8)]
     function HelloWorld(): string;
 
+    [GET, Path('/time')]
+    [Produces(TMediaType.APPLICATION_JSON)]
+    function WhatTimeIsIt: TDateTime;
+
     [GET, Path('/echostring/{AString}')]
+    [Produces(TMediaType.TEXT_PLAIN)]
     function EchoString([PathParam] AString: string): string;
 
     [GET, Path('/reversestring/{AString}')]
@@ -49,7 +55,8 @@ type
     [GET, Path('/authinfo'), Produces(TMediaType.APPLICATION_JSON)]
     function GetAuthInfo: string;
 
-    [GET, Path('/somma/{Addendo1}/{Addendo2}')]
+    [GET, Path('/sum/{Addendo1}/{Addendo2}')]
+    [Produces(TMediaType.TEXT_PLAIN)]
     function Somma(
       [PathParam] Addendo1: Integer;
       [PathParam] Addendo2: Integer): Integer;
@@ -59,12 +66,21 @@ type
 
     [POST, Path('/postexample'), Produces(TMediaType.TEXT_PLAIN)]
     function PostExample([BodyParam] AContent: string): string;
+
+    [POST, Path('/postjsonexample'), Produces(TMediaType.TEXT_PLAIN), Consumes(TMediaType.APPLICATION_JSON)]
+    function PostJSONExample([BodyParam] AContent: TJSONObject): string;
+
+    [POST, Path('/postjsonarray'), Produces(TMediaType.TEXT_PLAIN), Consumes(TMediaType.APPLICATION_JSON)]
+    function PostJSONArrayExample([BodyParam] AContent: TJSONArray): string;
+
+    [POST, Path('/poststream'), Produces(TMediaType.TEXT_PLAIN), Consumes(TMediaType.APPLICATION_OCTET_STREAM)]
+    function PostStreamExample([BodyParam] AContent: TStream): string;
   end;
 
   [Path('/entity')]
   TEntityResource = class
   private
-    [Context] URL: TMARSURL;
+    [Context] URL: TWiRLURL;
   public
     [GET, Path('/url')]
     [Produces(TMediaType.APPLICATION_JSON)]
@@ -83,7 +99,8 @@ type
 implementation
 
 uses
-  System.DateUtils, System.StrUtils, System.IOUtils;
+  System.DateUtils, System.StrUtils, System.IOUtils,
+  WiRL.http.Accept.Language;
 
 { THelloWorldResource }
 
@@ -98,8 +115,18 @@ begin
 end;
 
 function THelloWorldResource.HelloWorld(): string;
+var
+  LLang: TAcceptLanguage;
 begin
-  Result := 'Hello World!';
+  LLang := TAcceptLanguage.Create('it');
+  try
+    if Request.AcceptableLanguages.Contains(LLang) then
+      Result := 'Ciao Mondo! טיטחח'
+    else
+      Result := 'Hello World! טיטחח';
+  finally
+    LLang.Free;
+  end;
 end;
 
 function THelloWorldResource.Params(AOne, ATwo: string): string;
@@ -127,6 +154,21 @@ begin
   end;
 end;
 
+function THelloWorldResource.PostJSONArrayExample(AContent: TJSONArray): string;
+begin
+  Result := 'Array len: ' + IntToStr(AContent.Count);
+end;
+
+function THelloWorldResource.PostJSONExample(AContent: TJSONObject): string;
+begin
+  Result := 'Name=' + AContent.GetValue<string>('name');
+end;
+
+function THelloWorldResource.PostStreamExample(AContent: TStream): string;
+begin
+  Result := 'Stream len: ' + IntToStr(AContent.Size);
+end;
+
 function THelloWorldResource.ReverseString(AString: string): string;
 begin
   Result := System.StrUtils.ReverseString(AString);
@@ -142,6 +184,13 @@ begin
   raise Exception.Create('User Error Message');
 end;
 
+function THelloWorldResource.WhatTimeIsIt: TDateTime;
+begin
+  Result := Now;
+end;
+
+{ TEntityResource }
+
 function TEntityResource.EchoURL: TJSONObject;
 begin
   Result := URL.ToJSONObject;
@@ -154,8 +203,8 @@ begin
   LFileName := IncludeTrailingPathDelimiter(
     TDirectory.GetParent(
       TDirectory.GetParent(
-        TDirectory.GetParent(TMARSEngine.ServerDirectory)))) +
-    'mars-logo.png';
+        TDirectory.GetParent(TWiRLEngine.ServerDirectory)))) +
+    'WiRL-logo.png';
   Result := TFileStream.Create(LFileName, fmOpenRead or fmShareDenyWrite);
 end;
 
@@ -166,13 +215,13 @@ begin
   LFileName := IncludeTrailingPathDelimiter(
     TDirectory.GetParent(
       TDirectory.GetParent(
-        TDirectory.GetParent(TMARSEngine.ServerDirectory)))) +
-    'mars-doc.pdf';
+        TDirectory.GetParent(TWiRLEngine.ServerDirectory)))) +
+    'WiRL-doc.pdf';
   Result := TFileStream.Create(LFileName, fmOpenRead or fmShareDenyWrite);
 end;
 
 initialization
-  TMARSResourceRegistry.Instance.RegisterResource<THelloWorldResource>;
-  TMARSResourceRegistry.Instance.RegisterResource<TEntityResource>;
+  TWiRLResourceRegistry.Instance.RegisterResource<THelloWorldResource>;
+  TWiRLResourceRegistry.Instance.RegisterResource<TEntityResource>;
 
 end.

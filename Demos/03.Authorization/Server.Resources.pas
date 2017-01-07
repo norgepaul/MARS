@@ -1,9 +1,12 @@
-(*
-  Copyright 2015-2016, MARS - REST Library
-
-  Home: https://github.com/MARS-library
-
-*)
+{******************************************************************************}
+{                                                                              }
+{       WiRL: RESTful Library for Delphi                                       }
+{                                                                              }
+{       Copyright (c) 2015-2017 WiRL Team                                      }
+{                                                                              }
+{       https://github.com/delphi-blocks/WiRL                                  }
+{                                                                              }
+{******************************************************************************}
 unit Server.Resources;
 
 interface
@@ -11,16 +14,16 @@ interface
 uses
   System.Classes, System.SysUtils, System.Rtti,
 
-  MARS.Core.JSON,
-  MARS.Core.Registry,
-  MARS.Core.Attributes,
-  MARS.Core.MediaType,
-  MARS.Core.URL,
-  MARS.Core.MessageBodyWriters,
-  MARS.Core.Request,
-  MARS.Core.Response,
-  MARS.Core.Token,
-  MARS.Core.Token.Resource,
+  WiRL.Core.JSON,
+  WiRL.Core.Registry,
+  WiRL.Core.Attributes,
+  WiRL.http.Accept.MediaType,
+  WiRL.Core.URL,
+  WiRL.Core.MessageBodyWriters,
+  WiRL.Core.Request,
+  WiRL.Core.Response,
+  WiRL.Core.Auth.Context,
+  WiRL.Core.Auth.Resource,
 
   // Only if you want to use a custom (claims) class
   Server.Claims;
@@ -59,10 +62,10 @@ type
   end;
 
   [Path('user')]
-  TSecuredResource = class
+  TUserResource = class
   private
     // Injects the auth context into the "Auth" object
-    [Context] Auth: TMARSAuthContext;
+    [Context] Auth: TWiRLAuthContext;
     // Injects the custom claims into "Subject" object
     [Context] Subject: TServerClaims;
   public
@@ -70,7 +73,11 @@ type
     [Produces(TMediaType.APPLICATION_JSON)]
     function PublicInfo: TUserInfo;
 
-    [GET, Path('/details'), RolesAllowed('admin')]
+    [POST, PermitAll]
+    [Produces(TMediaType.APPLICATION_JSON)]
+    function InsertUser([BodyParam] JSON: TJSONObject): TUserInfo;
+
+    [GET, Path('/details'), RolesAllowed('admin,manager')]
     [Produces(TMediaType.APPLICATION_JSON)]
     function DetailsInfo: TJSONObject;
   end;
@@ -78,25 +85,31 @@ type
   // Inherit the Auth resource from the base class you want to use:
 
   [Path('basic_auth')]
-  TBasicAuthResource = class(TMARSAuthBasicResource)
+  TBasicAuthResource = class(TWiRLAuthBasicResource)
   private
-    // Injects the custom claims into "Subject" object
+    // Injects the custom claims into "Subject" field
     [Context] Subject: TServerClaims;
   protected
-    function Authenticate(const AUserName, APassword: string): Boolean; override;
+    function Authenticate(const AUserName, APassword: string): TWiRLAuthResult; override;
   end;
 
   [Path('form_auth')]
-  TFormAuthResource = class(TMARSAuthFormResource)
+  TFormAuthResource = class(TWiRLAuthFormResource)
+  private
+    // Injects the custom claims into "Subject" field
+    [Context] Subject: TServerClaims;
   protected
-    function Authenticate(const AUserName, APassword: string): Boolean; override;
+    function Authenticate(const AUserName, APassword: string): TWiRLAuthResult; override;
   end;
 
 implementation
 
-{ TSecuredResource }
+uses
+  REST.Json;
 
-function TSecuredResource.DetailsInfo: TJSONObject;
+{ TUserResource }
+
+function TUserResource.DetailsInfo: TJSONObject;
 begin
   Result := TJSONObject.Create;
 
@@ -104,26 +117,43 @@ begin
   Result.AddPair('subject', Auth.Subject.Clone);
 end;
 
-function TSecuredResource.PublicInfo: TUserInfo;
+function TUserResource.InsertUser(JSON: TJSONObject): TUserInfo;
+begin
+  Result := TJson.JsonToObject<TUserInfo>(JSON);
+
+  Result.FullName := 'Luca Minuti';
+  Result.Age := Result.Age - 10;
+  Result.Language := Subject.Language;
+  Result.Group := 2;
+end;
+
+function TUserResource.PublicInfo: TUserInfo;
 begin
   Result := TUserInfo.Create;
 
   Result.FullName := 'Paolo Rossi';
-  Result.Age := 46;
+  Result.Age := 47;
   Result.Language := Subject.Language;
   Result.Group := 10;
 
-  Result.AddAddress('Via Castello', 'Piacenza', '29021');
+  Result.AddAddress('Via Castello', 'Piacenza', '29121');
   Result.AddAddress('Via Trento', 'Parma', '43122');
 end;
 
 { TBasicAuthResource }
 
-function TBasicAuthResource.Authenticate(const AUserName, APassword: string): Boolean;
+function TBasicAuthResource.Authenticate(const AUserName, APassword: string): TWiRLAuthResult;
 begin
   // The line below is only an example, you have to replace with
   // your (server) authentication code (database, another service, etc...)
-  Result := SameText(APassword, 'mypassword');
+  Result.Success := SameText(APassword, 'mypassword');
+
+  // The line below is only an example, you have to replace with roles
+  // retrieved from the server
+  if SameText(AUserName, 'admin') or SameText(AUserName, 'paolo') then
+    Result.Roles := 'admin,manager,user'.Split([','])
+  else
+    Result.Roles := 'user,manager'.Split([',']);
 
   // Here you can set all field of your custom claims object
   Subject.Language := 'en-US';
@@ -131,9 +161,23 @@ end;
 
 { TFormAuthResource }
 
-function TFormAuthResource.Authenticate(const AUserName, APassword: string): Boolean;
+function TFormAuthResource.Authenticate(const AUserName, APassword: string): TWiRLAuthResult;
 begin
-  Result := SameText(APassword, 'mypassword');
+  // The line below is only an example, you have to replace with
+  // your (server) authentication code (database, another service, etc...)
+  Result.Success := SameText(APassword, 'mypassword');
+
+  // The line below is only an example, you have to replace with roles
+  // retrieved from the server
+  if SameText(AUserName, 'admin') or SameText(AUserName, 'paolo') then
+    Result.Roles := 'user,manager,admin'.Split([','])
+  else
+    Result.Roles := 'user,manager'.Split([',']);
+
+  // Here you can set all field of your custom claims object
+  Subject.Language := 'it-IT';
+  Subject.Expiration := Now + 1;
+
 end;
 
 { TUserInfo }
@@ -165,10 +209,10 @@ begin
 end;
 
 initialization
-  TMARSResourceRegistry.Instance.RegisterResource<TSecuredResource>;
+  TWiRLResourceRegistry.Instance.RegisterResource<TUserResource>;
 
-  // Auth resource
-  TMARSResourceRegistry.Instance.RegisterResource<TFormAuthResource>;
-  TMARSResourceRegistry.Instance.RegisterResource<TBasicAuthResource>;
+  // Auth resources
+  TWiRLResourceRegistry.Instance.RegisterResource<TFormAuthResource>;
+  TWiRLResourceRegistry.Instance.RegisterResource<TBasicAuthResource>;
 
 end.

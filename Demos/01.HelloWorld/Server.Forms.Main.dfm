@@ -1,7 +1,7 @@
 object MainForm: TMainForm
   Left = 0
   Top = 0
-  Caption = 'MARS HelloWorld'
+  Caption = 'WiRL HelloWorld'
   ClientHeight = 289
   ClientWidth = 554
   Color = clBtnFace
@@ -54,14 +54,14 @@ object MainForm: TMainForm
       TabOrder = 2
       Text = '8080'
     end
-    object Edit1: TEdit
-      Left = 312
-      Top = 24
-      Width = 121
-      Height = 21
-      TabOrder = 3
-      Text = 'secret'
-    end
+  end
+  object Button1: TButton
+    Left = 208
+    Top = 79
+    Width = 75
+    Height = 25
+    Caption = 'Button1'
+    TabOrder = 1
   end
   object MainActionList: TActionList
     Left = 104

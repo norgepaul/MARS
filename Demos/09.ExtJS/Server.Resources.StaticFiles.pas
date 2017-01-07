@@ -1,22 +1,24 @@
-(*
-  Copyright 2015-2016, MARS - REST Library
-
-  Home: https://github.com/MARS-library
-
-*)
+{******************************************************************************}
+{                                                                              }
+{       WiRL: RESTful Library for Delphi                                       }
+{                                                                              }
+{       Copyright (c) 2015-2017 WiRL Team                                      }
+{                                                                              }
+{       https://github.com/delphi-blocks/WiRL                                  }
+{                                                                              }
+{******************************************************************************}
 unit Server.Resources.StaticFiles;
 
 interface
 
 uses
-  SysUtils, Classes, IOUtils
+  System.SysUtils, System.Classes, System.IOUtils,
 
-  , MARS.Core.Attributes
-  , MARS.Core.MediaType
-  , MARS.Core.Response
+  WiRL.Core.Attributes,
+  WiRL.http.Accept.MediaType,
+  WiRL.Core.Response,
+  WiRL.WebServer.Resources;
 
-  , MARS.WebServer.Resources
-  ;
 
 type
   [Path('static')]
@@ -28,7 +30,7 @@ type
 implementation
 
 uses
-    MARS.Core.Registry;
+  WiRL.Core.Registry;
 
 { THelloWorldResource }
 
@@ -40,7 +42,7 @@ begin
 end;
 
 initialization
-  TMARSResourceRegistry.Instance.RegisterResource<TStaticFileResources>(
+  TWiRLResourceRegistry.Instance.RegisterResource<TStaticFileResources>(
     function: TObject
     begin
       Result := TStaticFileResources.Create;

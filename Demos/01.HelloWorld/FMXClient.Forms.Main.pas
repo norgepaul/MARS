@@ -1,9 +1,12 @@
-(*
-  Copyright 2015-2016, MARS - REST Library
-
-  Home: https://github.com/MARS-library
-
-*)
+{******************************************************************************}
+{                                                                              }
+{       WiRL: RESTful Library for Delphi                                       }
+{                                                                              }
+{       Copyright (c) 2015-2017 WiRL Team                                      }
+{                                                                              }
+{       https://github.com/delphi-blocks/WiRL                                  }
+{                                                                              }
+{******************************************************************************}
 unit FMXClient.Forms.Main;
 
 interface
@@ -57,10 +60,10 @@ implementation
 
 uses
   FMXClient.DataModules.Main,
-  MARS.Core.Utils,
-  MARS.Rtti.Utils,
-  MARS.Client.Utils,
-  MARS.Core.JSON;
+  WiRL.Core.Utils,
+  WiRL.Rtti.Utils,
+  WiRL.Client.Utils,
+  WiRL.Core.JSON;
 
 procedure TMainForm.Button1Click(Sender: TObject);
 begin
